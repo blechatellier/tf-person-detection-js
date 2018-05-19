@@ -1,0 +1,7 @@
+venv
+**/.vscode
+**/__pycache__
+.env
+models
+**/*.log
+node_modules
