@@ -1,5 +1,5 @@
 {
-  "name": "tf-object-detection-js",
+  "name": "tf-person-detection-js",
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
