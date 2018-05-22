@@ -49,7 +49,7 @@ class DetectComponent extends React.Component {
     });
   }
 
-  async grabFrame() {
+  grabFrame() {
     this.previewContext.drawImage(this.video, 0, 0, this.video.videoWidth, this.video.videoHeight, 0, 0, this.preview.width, this.preview.height);
     requestAnimationFrame(this.grabFrame);
   }
