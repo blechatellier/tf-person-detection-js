@@ -1,11 +1,15 @@
 import * as posenet from '@tensorflow-models/posenet';
 import React from 'react';
 import styled from 'styled-components';
-import Webcam from './Webcam';
 
 const Detect = styled.div`
   position: relative;
 `
+const Preview = styled.canvas`
+  position: absolute;
+  top: 0;
+  left: 0;
+`;
 const Predictions = styled.canvas`
   position: absolute;
   top: 0;
@@ -26,29 +30,44 @@ class DetectComponent extends React.Component {
     await this.initPosenet();
 
     this.color = '#' + ((1<<24)*Math.random()|0).toString(16);
-    this.preview = document.createElement('canvas');
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    this.video = document.createElement('video');
+    this.video.srcObject = stream;
+  
     this.previewContext = this.preview.getContext('2d');
     this.predictionsContext = this.predictions.getContext('2d');
 
-    this.webcam.video.addEventListener('canplay', () => {
-      this.preview.width = this.webcam.video.videoWidth;
-      this.preview.height = this.webcam.video.videoHeight;
-      this.predictions.width = this.webcam.video.videoWidth;
-      this.predictions.height = this.webcam.video.videoHeight;
+    this.video.addEventListener('canplay', () => {
+      this.preview.width = this.video.videoHeight;
+      this.preview.height = this.video.videoHeight;
+      this.predictions.width = this.video.videoHeight;
+      this.predictions.height = this.video.videoHeight;
       this.grabFrame();
     });
   }
 
   async grabFrame() {
-    this.previewContext.drawImage(this.webcam.video, 0, 0, this.preview.width, this.preview.height);
-    
-    const pose = await this.posenet.estimateSinglePose(this.preview, 0.5, false, 16);
+    this.previewContext.drawImage(this.video, 0, 0, this.video.videoWidth, this.video.videoHeight, 0, 0, this.preview.width, this.preview.height);
     this.predictionsContext.clearRect(0, 0, this.predictions.width, this.predictions.height);
+    await this.singlePose();
+    requestAnimationFrame(this.grabFrame);
+  }
+
+  drawPose(pose) {
     this.drawBoundingBox(this.predictionsContext, pose.keypoints, this.color);
     this.drawKeypoints(this.predictionsContext, pose.keypoints, 0.5, this.color);
     this.drawSkeleton(this.predictionsContext, pose.keypoints, 0.5, this.color);
+  }
 
-    requestAnimationFrame(this.grabFrame);
+  async multiplePoses() {
+    const poses = await this.posenet.estimateMultiplePoses(this.preview, 0.5, false, 16);
+    poses.forEach(pose => this.drawPose(pose));
+  }
+
+  async singlePose() {
+    const pose = await this.posenet.estimateSinglePose(this.preview, 0.5, false, 16);
+    this.drawPose(pose);
   }
 
   drawKeypoints(context, keypoints, minConfidence, color) {
@@ -102,7 +121,7 @@ class DetectComponent extends React.Component {
   render() {
     return (
       <Detect>
-        <Webcam ref={webcam => { this.webcam = webcam; }} />
+        <Preview innerRef={preview => { this.preview = preview; }} />
         <Predictions innerRef={predictions => { this.predictions = predictions; }} />
       </Detect>
     );
