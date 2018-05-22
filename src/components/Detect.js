@@ -20,6 +20,7 @@ class DetectComponent extends React.Component {
   constructor(props) {
     super(props);
     this.grabFrame = this.grabFrame.bind(this);
+    this.detect = this.detect.bind(this);
   }
 
   async initPosenet() {
@@ -44,20 +45,25 @@ class DetectComponent extends React.Component {
       this.predictions.width = this.video.videoHeight;
       this.predictions.height = this.video.videoHeight;
       this.grabFrame();
+      this.detect();
     });
   }
 
   async grabFrame() {
     this.previewContext.drawImage(this.video, 0, 0, this.video.videoWidth, this.video.videoHeight, 0, 0, this.preview.width, this.preview.height);
+    requestAnimationFrame(this.grabFrame);
+  }
+
+  async detect() {
     this.predictionsContext.clearRect(0, 0, this.predictions.width, this.predictions.height);
     await this.singlePose();
-    requestAnimationFrame(this.grabFrame);
+    requestAnimationFrame(this.detect);
   }
 
   drawPose(pose) {
     this.drawBoundingBox(this.predictionsContext, pose.keypoints, this.color);
-    this.drawKeypoints(this.predictionsContext, pose.keypoints, 0.5, this.color);
-    this.drawSkeleton(this.predictionsContext, pose.keypoints, 0.5, this.color);
+    this.drawKeypoints(this.predictionsContext, pose.keypoints, 0.8, this.color);
+    this.drawSkeleton(this.predictionsContext, pose.keypoints, 0.3, this.color);
   }
 
   async multiplePoses() {
